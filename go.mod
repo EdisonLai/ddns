@@ -5,6 +5,8 @@ go 1.18
 require (
 	github.com/labstack/echo/v4 v4.10.0
 	github.com/sirupsen/logrus v1.9.0
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.592
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/dnspod v1.0.589
 )
 
 require (
