@@ -18,13 +18,13 @@ var record dnscommon.DNSRecord
 
 func main() {
 	var err error
-	ctx := logger.InitLogger(context.Background())
-	logCtx := logger.GetEntry(ctx)
 
-	var configPath *string
-	if err = config.InitConfig(*configPath); err != nil {
+	if err = config.InitConfig(); err != nil {
 		panic(err)
 	}
+
+	ctx := logger.InitLogger(context.Background(), "")
+	logCtx := logger.GetEntry(ctx)
 
 	client := tencent.NewDNSClient(config.GConf.Provider.SecretId, config.GConf.Provider.SecretKey)
 
@@ -36,6 +36,7 @@ func main() {
 	}
 	if len(records) == 1 {
 		record = records[0]
+		logCtx.Infof("record found[%+v]", record)
 	} else {
 		os.Exit(-2)
 		return
@@ -48,8 +49,9 @@ func main() {
 			case <-ctx.Done():
 				return
 			default:
-				newIP, err := GetPublicIP(ctx, config.GConf.Domain.Domain)
+				newIP, err := GetPublicIP(ctx, config.GConf.EIPMethod.Server)
 				if err != nil {
+					logCtx.WithError(err).Errorf("get public ip fail")
 					close(newIPCh)
 					return
 				}
@@ -60,30 +62,34 @@ func main() {
 		}
 	}(ctx)
 
-	select {
-	case newIP, ok := <-newIPCh:
-		if !ok {
-			logCtx.Error("backend error happend")
-			os.Exit(-2)
-			return
-		}
-
-		if newIP != record.Value {
-			if err = tencent.ModifyDynamicDNS(ctx, client, record.RecordId, config.GConf.Domain.Domain, config.GConf.Domain.SubDomain, record.LineId, newIP); err != nil {
-				os.Exit(0)
+	for {
+		select {
+		case newIP, ok := <-newIPCh:
+			if !ok {
+				logCtx.Error("backend error happend")
+				os.Exit(-2)
 				return
 			}
-		}
 
-	case <-ctx.Done():
-		os.Exit(0)
-		return
+			if newIP != record.Value {
+				if err = tencent.ModifyDynamicDNS(ctx, client, record.RecordId, config.GConf.Domain.Domain, config.GConf.Domain.SubDomain, record.Line, newIP); err != nil {
+					logCtx.WithError(err).Error("backend error happend")
+					os.Exit(0)
+					return
+				}
+			}
+
+		case <-ctx.Done():
+			logCtx.Info("exit safely")
+			os.Exit(0)
+			return
+		}
 	}
 }
 
 func GetPublicIP(ctx context.Context, server string) (ip string, err error) {
 	client := &http.Client{}
-	req, err := http.NewRequest(http.MethodGet, server, nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://%s/client_ip", server), nil)
 
 	if err != nil {
 		fmt.Println(err)

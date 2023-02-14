@@ -8,7 +8,7 @@ import (
 
 var loggerKey string = "logger"
 
-func InitLogger(ctx context.Context) context.Context {
+func InitLogger(ctx context.Context, level string) context.Context {
 	if ctx.Value(loggerKey) != nil {
 		return ctx
 	}

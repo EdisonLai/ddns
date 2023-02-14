@@ -1,0 +1,13 @@
+[provider]
+	provider = "tencent"
+	secretId = "TencentSDKResp"
+	secretKey = "tset"
+
+[domain]
+	domain = "cstrail.com"
+	subDomain = "test"
+	checkTime = 1
+
+[eipGetServer]
+	type = "http"
+	server = "127.0.0.1:9999"

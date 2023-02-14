@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	common "github.com/EdisonLai/ddns/pkg/dns-provider/dns-common"
+	"github.com/EdisonLai/ddns/pkg/logger"
 
 	tencommon "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors"
@@ -29,12 +30,14 @@ func NewDNSClient(secretID, secretKey string) (client *dnspod.Client) {
 }
 
 func DescribeDomain(ctx context.Context, client *dnspod.Client, domain string, subdomainfilter []string) (records []common.DNSRecord, err error) {
+	logCtx := logger.GetEntry(ctx)
+
 	// 实例化一个请求对象,每个接口都会对应一个request对象
 	request := dnspod.NewDescribeRecordListRequest()
 
 	request.Domain = tencommon.StringPtr(domain)
 	if len(subdomainfilter) == 1 {
-		request.Subdomain = tencommon.StringPtr("home")
+		request.Subdomain = tencommon.StringPtr(subdomainfilter[0])
 	}
 
 	// 返回的resp是一个DescribeRecordListResponse的实例，与请求对象对应
@@ -72,19 +75,18 @@ func DescribeDomain(ctx context.Context, client *dnspod.Client, domain string, s
 			records = append(records, v)
 		}
 	}
+	logCtx.Infof("provider record[%v]", records)
 	return
 }
 
-func ModifyDynamicDNS(ctx context.Context, client *dnspod.Client, recordId uint64, domain, subdomain, lineId, value string) (err error) {
+func ModifyDynamicDNS(ctx context.Context, client *dnspod.Client, recordId uint64, domain, subdomain, lineZh, value string) (err error) {
 	// 实例化一个请求对象,每个接口都会对应一个request对象
 	request := dnspod.NewModifyDynamicDNSRequest()
 
 	request.Domain = tencommon.StringPtr(domain)
 	request.SubDomain = tencommon.StringPtr(subdomain)
 	request.RecordId = tencommon.Uint64Ptr(recordId)
-	if lineId != "" {
-		request.RecordLineId = tencommon.StringPtr(lineId)
-	}
+	request.RecordLine = tencommon.StringPtr(lineZh)
 
 	request.Value = tencommon.StringPtr(value)
 

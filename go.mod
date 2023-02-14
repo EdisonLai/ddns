@@ -3,6 +3,7 @@ module github.com/EdisonLai/ddns
 go 1.18
 
 require (
+	github.com/BurntSushi/toml v1.2.1
 	github.com/labstack/echo/v4 v4.10.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.592
